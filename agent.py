@@ -1,20 +1,17 @@
 from llm import llm
 from graph import graph
-
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain.schema import StrOutputParser
-
 from langchain.tools import Tool
-
 from langchain_community.chat_message_histories import Neo4jChatMessageHistory
-
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain import hub
-
 from utils import get_session_id
 
-from langchain_core.prompts import PromptTemplate
+from tools.vector import get_movie_plot
+from tools.cypher import cypher_qa
 
 chat_prompt = ChatPromptTemplate.from_messages(
     [
@@ -23,8 +20,6 @@ chat_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-
-
 movie_chat = chat_prompt | llm | StrOutputParser()
 
 tools = [
@@ -32,13 +27,22 @@ tools = [
         name="General Chat",
         description="For general movie chat not covered by other tools",
         func=movie_chat.invoke,
+    ), 
+    Tool.from_function(
+        name="Movie Plot Search",  
+        description="For when you need to find information about movies based on a plot",
+        func=get_movie_plot, 
+    ),
+    Tool.from_function(
+        name="Movie information",
+        description="Provide information about movies questions using Cypher",
+        func = cypher_qa
     )
 ]
 
 def get_memory(session_id):
     return Neo4jChatMessageHistory(session_id=session_id, graph=graph)
 
-# agent_prompt = hub.pull("hwchase17/react-chat")
 agent_prompt = PromptTemplate.from_template("""
 You are a movie expert providing information about movies.
 Be as helpful as possible and return as much information as possible.

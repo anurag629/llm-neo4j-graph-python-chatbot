@@ -9,6 +9,6 @@ llm = ChatOpenAI(
 )
 
 # Create the Embedding model
-embedding = OpenAIEmbeddings(
+embeddings = OpenAIEmbeddings(
     openai_api_key=st.secrets["OPENAI_API_KEY"]
 )
